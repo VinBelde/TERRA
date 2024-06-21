@@ -1,5 +1,5 @@
 # I am not sure if we want to have one file per campaign or do everything with the same arguments
-# Since the conditions might change I feel that one file per campaing can be smart
+# Since the conditions might change I feel that one file per campaign can be smart
 
 library(tidyverse)
 library(dataDownloader)
@@ -134,7 +134,7 @@ conc_ch4_25 <- flux_match(conc_df, fieldnotes, conc_col = "CH4", start_col = "da
 
 # fux_fitting to fit a model to the concentration over time and calculate a slope
 
-slopes_co2_25 <- flux_fitting(conc_co2_25, fit_type = "exp")
+slopes_co2_25 <- flux_fitting(conc_co2_25, fit_type = "exp", start_cut = 20)
 str(slopes_co2_25)
 slopes_ch4_25 <- flux_fitting(conc_ch4_25, fit_type = "exp")
 
@@ -144,8 +144,19 @@ slopes_co2_25 <- flux_quality(slopes_co2_25, fit_type = "exp", slope_col = "f_sl
 
 slopes_ch4_25 <- flux_quality(slopes_ch4_25, fit_type = "exp", slope_col = "f_slope_tz", ambient_conc = 2000)
 
+# table showing percentage of ok, zero and discard
+
+quality_count_co2 <- slopes_co2_25 |>
+  count(f_quality_flag) |>
+  mutate(Percentage = (n / sum(n))*100)
+
+quality_count_ch4 <- slopes_ch4_25 |>
+  count(f_quality_flag) |>
+  mutate(Percentage = (n / sum(n))*100)
+
+
 flux_plot(slopes_co2_25, fit_type = "exp", f_plotname = "week25_co2", f_ylim_upper = 600)
-flux_plot(slopes_ch4_25, fit_type = "exp", f_plotname = "week25_ch4", f_ylim_lower = 1995, f_ylim_upper = 2005, y_text_position = 2000)
+flux_plot(slopes_ch4_25, fit_type = "exp", f_plotname = "week25_ch4", f_ylim_lower = 1995, f_ylim_upper = 2010, y_text_position = 2000)
 
 
 # flux_calc to calculate the fluxes
