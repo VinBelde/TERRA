@@ -54,10 +54,9 @@ CO2_CH4_1 <- read_delim("raw_data/week25/CO2_CH4_2024-06-17.data", delim = "\t",
     TIME = hms(TIME),
     CO2 = as.double(CO2),
     CH4 = as.double(CH4),
-    datetime = ymd_hms(paste(DATE, TIME)),
-    remark = REMARK
+    datetime = ymd_hms(paste(DATE, TIME))
   ) |>
-  select(datetime, remark, CH4, CO2)
+  select(datetime, CH4, CO2) # I am removing the remark column. Since it was not always sync with the measurement it is annoying in the rest
 
 head(CO2_CH4_1)
 
@@ -110,7 +109,7 @@ str(conc_df)
 # just some graph to check that the data are complete
 
 conc_df |>
-  select(!remark) |>
+  # select(!remark) |>
   pivot_longer(cols = c(CH4, CO2, PAR_in_chamber, PAR_out, T_in_chamber, T_out), names_to = "measurement") |>
   ggplot(aes(datetime, value)) +
   geom_point() +
@@ -131,7 +130,21 @@ conc_co2_25 <- flux_match(conc_df, fieldnotes, conc_col = "CO2", start_col = "da
 
 conc_ch4_25 <- flux_match(conc_df, fieldnotes, conc_col = "CH4", start_col = "datetime_start", measurement_length = 180)
 
+conc_co2_25 <- conc_co2_25 |>
+  mutate(
+    PAR_in_chamber = case_when(
+      TYPE == "C" ~ NA_real_, # the PAR sensor was still inside the transparent chamber while we were doing the measurements with the cap
+      TYPE != "C" ~ PAR_in_chamber
+    )
+  )
 
+conc_ch4_25 <- conc_ch4_25 |>
+  mutate(
+    PAR_in_chamber = case_when(
+      TYPE == "C" ~ NA_real_, # the PAR sensor was still inside the transparent chamber while we were doing the measurements with the cap
+      TYPE != "C" ~ PAR_in_chamber
+    )
+  )
 # fux_fitting to fit a model to the concentration over time and calculate a slope
 
 slopes_co2_25 <- flux_fitting(conc_co2_25, fit_type = "exp", start_cut = 20)
@@ -161,14 +174,16 @@ flux_plot(slopes_ch4_25, fit_type = "exp", f_plotname = "week25_ch4", f_ylim_low
 
 # flux_calc to calculate the fluxes
 flux_co2_25_chamber <- slopes_co2_25 |>
-  filter(TYPE != "C") |>
+  filter(TYPE != "C",
+    f_cut == "keep" # we had a cut in quality
+    ) |>
   flux_calc(
     slope_col = "f_slope_corr",
     chamber_volume = 6.283, #need to check and add tube volumes
     plot_area = 0.314,
     temp_air_col = "T_in_chamber",
     cols_ave = c("PAR_in_chamber", "PAR_out", "T_out"),
-    cols_keep = c("remark", "SITE", "BLOCK", "PLOT_ID", "WARMING", "GRUBBING", "RAIN", "TYPE")
+    cols_keep = c("f_start", "SITE", "BLOCK", "PLOT_ID", "WARMING", "GRUBBING", "RAIN", "TYPE")
   ) |>
   mutate(
     chamber = case_when(
@@ -179,7 +194,8 @@ flux_co2_25_chamber <- slopes_co2_25 |>
   )
 
 flux_ch4_25_chamber <- slopes_ch4_25 |>
-  filter(TYPE != "C") |>
+  filter(
+    TYPE != "C") |>
   mutate(
     slope_ppm = f_slope_corr * 001 # we need to feed ppm to the function
   ) |>
@@ -189,7 +205,7 @@ flux_ch4_25_chamber <- slopes_ch4_25 |>
     plot_area = 0.314,
     temp_air_col = "T_in_chamber",
     cols_ave = c("PAR_in_chamber", "PAR_out", "T_out"),
-    cols_keep = c("remark", "SITE", "BLOCK", "PLOT_ID", "WARMING", "GRUBBING", "RAIN", "TYPE")
+    cols_keep = c("f_start", "SITE", "BLOCK", "PLOT_ID", "WARMING", "GRUBBING", "RAIN", "TYPE")
   ) |>
   mutate(
     chamber = case_when(
@@ -200,14 +216,16 @@ flux_ch4_25_chamber <- slopes_ch4_25 |>
   )
 
 flux_co2_25_tube <- slopes_co2_25 |>
-  filter(TYPE == "C") |>
+  filter(TYPE == "C",
+    f_cut == "keep" # we had a cut in quality
+    ) |>
   flux_calc(
     slope_col = "f_slope_corr",
     chamber_volume = 1.178, #need to check and add tube volumes
     plot_area = 0.078,
     temp_air_col = "T_in_chamber",
     cols_ave = c("PAR_in_chamber", "PAR_out", "T_out"),
-    cols_keep = c("remark", "SITE", "BLOCK", "PLOT_ID", "WARMING", "GRUBBING", "RAIN", "TYPE")
+    cols_keep = c("f_start", "SITE", "BLOCK", "PLOT_ID", "WARMING", "GRUBBING", "RAIN", "TYPE")
   ) |>
   mutate(
     chamber = "dark_tube",
@@ -225,7 +243,7 @@ flux_ch4_25_tube <- slopes_ch4_25 |>
     plot_area = 0.078,
     temp_air_col = "T_in_chamber",
     cols_ave = c("PAR_in_chamber", "PAR_out", "T_out"),
-    cols_keep = c("remark", "SITE", "BLOCK", "PLOT_ID", "WARMING", "GRUBBING", "RAIN", "TYPE")
+    cols_keep = c("f_start", "SITE", "BLOCK", "PLOT_ID", "WARMING", "GRUBBING", "RAIN", "TYPE")
   ) |>
   mutate(
     chamber = "dark_tube",
@@ -259,5 +277,76 @@ fluxes_25  |>
 
 # this is a very ugly plot, it should be improved (color blind palette and co)
 
-# once the clean dataset is there, do not forget to upload it in the clean_data folder on OSF
-# (we avoid doing this automatically because we do not want to take the risk to overwrite the data on OSF in case we messed up something)
+# we create one df per gas and change the unit for CH4
+
+fluxes_CO2 <- fluxes_25 |>
+    filter(
+        gas == "CO2"
+    ) |>
+    arrange(f_start) |>
+    select(!f_fluxID) # we remove flux_ID because it will be repeated with the next batch of data
+
+
+fluxes_CH4 <- fluxes_25 |>
+    filter(
+        gas == "CH4"
+    ) |>
+    mutate(
+        flux = flux * 1000 # converting to micromol
+    ) |>
+    arrange(f_start) |>
+    select(!f_fluxID) # we remove flux_ID because it will be repeated with the next batch of data
+
+
+# need to upload to OSF: 1 file for CO2, 1 for CH4, continuous adding (function for that?)
+
+# only for week 25
+
+write_csv(fluxes_CO2, "clean_data/fluxes_CO2.csv")
+
+write_csv(fluxes_CH4, "clean_data/fluxes_CH4.csv")
+
+
+# from week 27
+
+# download the previous fluxes files from OSF
+
+# get_file(node = "rba87",
+#          file = "fluxes_CO2.csv",
+#          path = "clean_data",
+#          remote_path = "ecosystem_fluxes")
+
+# get_file(node = "rba87",
+#          file = "fluxes_CH4.csv",
+#          path = "clean_data",
+#          remote_path = "ecosystem_fluxes")
+
+# # read them
+
+# fluxes_CO2_previous <- read_csv("clean_data/fluxes_CO2.csv", col_types = "dddTcccccccdddcc")
+
+# fluxes_CH4_previous <- read_csv("clean_data/fluxes_CH4.csv", col_types = "dddTcccccccdddcc") 
+
+
+
+
+# # full join with the one that was just produced
+# # we add a distinct as a safety in case this is run several times (no duplicate of data)
+
+# fluxes_CO2_to_upload <- bind_rows(fluxes_CO2, fluxes_CO2_previous) |>
+#     distinct(f_start, gas, SITE, BLOCK, PLOT_ID, chamber, .keep_all = TRUE) |> # we do the distinct on non measured variables only to avoid issues with attributes on other columns
+#     arrange(f_start)
+
+# str(fluxes_CO2_to_upload) # important to check that the nb of rows matches what it should be
+
+# fluxes_CH4_to_upload <- bind_rows(fluxes_CH4, fluxes_CH4_previous) |>
+#     distinct(f_start, gas, SITE, BLOCK, PLOT_ID, chamber, .keep_all = TRUE) |> # we do the distinct on non measured variables only to avoid issues with attributes on other columns
+#     arrange(f_start)
+
+# str(fluxes_CH4_to_upload) # important to check that the nb of rows matches what it should be
+
+
+# # now we write the csv files and upload them to OSF
+# write_csv(fluxes_CO2_to_upload, "clean_data/fluxes_CO2.csv")
+
+# write_csv(fluxes_CH4_to_upload, "clean_data/fluxes_CH4.csv")

@@ -7,10 +7,9 @@ import_CO2_CH4 <- function(file
         TIME = hms(TIME),
         CO2 = as.double(CO2),
         CH4 = as.double(CH4),
-        datetime = ymd_hms(paste(DATE, TIME)),
-        remark = REMARK
+        datetime = ymd_hms(paste(DATE, TIME))
     ) |>
-    select(datetime, remark, CH4, CO2)
+    select(datetime, CH4, CO2)
 
     print(head(df))
     df
