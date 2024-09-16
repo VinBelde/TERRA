@@ -12,7 +12,7 @@ source("code/fluxes/fun.R")
 get_file(node = "rba87",
          file = "Fieldnotes.csv",
          path = "raw_data",
-         remote_path = "raw_data/ecosystem_fluxes")
+         remote_path = "raw_data/ecosystem_fluxes/Week_25")
 
 get_file(node = "rba87",
          file = "CO2_CH4_2024-06-17.data",
@@ -23,6 +23,7 @@ get_file(node = "rba87",
          file = "CO2_CH4_2024-06-18.data",
          path = "raw_data/week25",
          remote_path = "raw_data/ecosystem_fluxes/Week_25")
+
 get_file(node = "rba87",
          file = "CO2_CH4_2024-06-19.data",
          path = "raw_data/week25",
@@ -140,23 +141,14 @@ slopes_ch4_25 <- flux_fitting(conc_ch4_25, fit_type = "exp")
 
 # flux_quality and flux_plot to check the quality and see if we need to modify anything
 
-slopes_co2_25 <- flux_quality(slopes_co2_25, fit_type = "exp", slope_col = "f_slope_tz")
+slopes_co2_25 <- flux_quality(slopes_co2_25, fit_type = "exp",)
 
-slopes_ch4_25 <- flux_quality(slopes_ch4_25, fit_type = "exp", slope_col = "f_slope_tz", ambient_conc = 2000)
-
-# table showing percentage of ok, zero and discard
-
-quality_count_co2 <- slopes_co2_25 |>
-  count(f_quality_flag) |>
-  mutate(Percentage = (n / sum(n))*100)
-
-quality_count_ch4 <- slopes_ch4_25 |>
-  count(f_quality_flag) |>
-  mutate(Percentage = (n / sum(n))*100)
+slopes_ch4_25 <- flux_quality(slopes_ch4_25, fit_type = "exp", ambient_conc = 2000)
 
 
-flux_plot(slopes_co2_25, fit_type = "exp", f_plotname = "week25_co2", f_ylim_upper = 600)
-flux_plot(slopes_ch4_25, fit_type = "exp", f_plotname = "week25_ch4", f_ylim_lower = 1995, f_ylim_upper = 2010, y_text_position = 2000)
+
+flux_plot(slopes_co2_25, f_plotname = "week25_co2", f_ylim_upper = 550, output = "print_only")
+flux_plot(slopes_ch4_25, f_plotname = "week25_ch4", f_ylim_lower = 1995, f_ylim_upper = 2010, y_text_position = 2000)
 
 
 # flux_calc to calculate the fluxes
