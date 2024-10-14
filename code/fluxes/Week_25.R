@@ -95,12 +95,17 @@ slopes_ch4_25 <- flux_fitting(conc_ch4_25, fit_type = "exp")
 
 # flux_quality and flux_plot to check the quality and see if we need to modify anything
 
-slopes_co2_25 <- flux_quality(slopes_co2_25, fit_type = "exp")
+slopes_co2_25 <- flux_quality(slopes_co2_25, fit_type = "exp",  weird_fluxes_id = c(
+  33 #intercept does not intercept fit
+))
 
-slopes_ch4_25 <- flux_quality(slopes_ch4_25, fit_type = "exp", ambient_conc = 2000)
+slopes_ch4_25 <- flux_quality(slopes_ch4_25, fit_type = "exp", ambient_conc = 2000, weird_fluxes_id = c(
+  3, #fit does not fit data
+  178 #intercept does not match fit
+))
 
 flux_plot(slopes_co2_25, f_plotname = "week25_co2", f_ylim_upper = 600, output = "pdfpages")
-flux_plot(slopes_ch4_25, f_plotname = "week25_ch4", f_ylim_lower = 1995, f_ylim_upper = 2010, y_text_position = 2000, output = "pdfpages")
+flux_plot(slopes_ch4_25, f_plotname = "week25_ch4", f_ylim_lower = 1985, f_ylim_upper = 2015, y_text_position = 2000, output = "pdfpages")
 
 
 # flux_calc to calculate the fluxes
