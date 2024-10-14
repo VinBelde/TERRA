@@ -61,9 +61,9 @@ str(conc_df)
 
 # here add start and end cuts and correct time mismatch
 
-conc_co2_33 <- flux_match(conc_df, fieldnotes, conc_col = "CO2", start_col = "datetime_start", measurement_length = 180, time_diff = -110, startcrop = 20)
+conc_co2_33 <- flux_match(conc_df, fieldnotes, conc_col = "CO2", start_col = "datetime_start", measurement_length = 180, time_diff = -110, startcrop = 30)
 
-conc_ch4_33 <- flux_match(conc_df, fieldnotes, conc_col = "CH4", start_col = "datetime_start", measurement_length = 180, time_diff = -110, startcrop = 20)
+conc_ch4_33 <- flux_match(conc_df, fieldnotes, conc_col = "CH4", start_col = "datetime_start", measurement_length = 180, time_diff = -110, startcrop = 28)
 
 conc_co2_33 <- conc_co2_33 |>
   mutate(
@@ -88,12 +88,17 @@ slopes_ch4_33 <- flux_fitting(conc_ch4_33, fit_type = "exp")
 
 # flux_quality and flux_plot to check the quality and see if we need to modify anything
 
-slopes_co2_33 <- flux_quality(slopes_co2_33, fit_type = "exp")
+slopes_co2_33 <- flux_quality(slopes_co2_33, fit_type = "exp", weird_fluxes_id = c(
+  77 #intercept does not match fit
+  ), force_ok_id = c(
+    25, #fit is good
+    29 #fit follows data
+  ))
 
 slopes_ch4_33 <- flux_quality(slopes_ch4_33, fit_type = "exp", ambient_conc = 2000)
 
 flux_plot(slopes_co2_33, f_plotname = "week33_co2", f_ylim_upper = 600, output = "pdfpages")
-flux_plot(slopes_ch4_33, f_plotname = "week33_ch4", f_ylim_lower = 1970, f_ylim_upper = 2045, y_text_position = 2000, output = "pdfpages")
+flux_plot(slopes_ch4_33, f_plotname = "week33_ch4", f_ylim_lower = 1950, f_ylim_upper = 2065, y_text_position = 2000, output = "pdfpages")
 
 
 # flux_calc to calculate the fluxes
