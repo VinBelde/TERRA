@@ -62,9 +62,9 @@ str(conc_df)
 
 # here add start and end cuts and correct time mismatch
 
-conc_co2_31 <- flux_match(conc_df, fieldnotes, conc_col = "CO2", start_col = "datetime_start", measurement_length = 180, time_diff = -90, startcrop = 20)
+conc_co2_31 <- flux_match(conc_df, fieldnotes, conc_col = "CO2", start_col = "datetime_start", measurement_length = 180, time_diff = -90, startcrop = 30)
 
-conc_ch4_31 <- flux_match(conc_df, fieldnotes, conc_col = "CH4", start_col = "datetime_start", measurement_length = 180, time_diff = -90, startcrop = 20)
+conc_ch4_31 <- flux_match(conc_df, fieldnotes, conc_col = "CH4", start_col = "datetime_start", measurement_length = 180, time_diff = -90, startcrop = 25)
 
 conc_co2_31 <- conc_co2_31 |>
   mutate(
@@ -89,12 +89,25 @@ slopes_ch4_31 <- flux_fitting(conc_ch4_31, fit_type = "exp")
 
 # flux_quality and flux_plot to check the quality and see if we need to modify anything
 
-slopes_co2_31 <- flux_quality(slopes_co2_31, fit_type = "exp")
+slopes_co2_31 <- flux_quality(slopes_co2_31, fit_type = "exp", weird_fluxes_id = c(
+  1, #weird spike in data 
+  5, #intercept does not match fit
+  25, #intercept does not match fit
+  141 #intercept does not match fit
+  
+), force_ok_id = c(
+  31 #no issues with fit or slope
+))
 
-slopes_ch4_31 <- flux_quality(slopes_ch4_31, fit_type = "exp", ambient_conc = 2000)
+slopes_ch4_31 <- flux_quality(slopes_ch4_31, fit_type = "exp", ambient_conc = 2000, weird_fluxes_id = c(
+  1, #no data points in first half
+  43, #fit does not match data
+  109, #intercept does not match fit
+  113 #fit isnt great for data
+))
 
-flux_plot(slopes_co2_31, f_plotname = "week31_co2", f_ylim_upper = 600, output = "pdfpages")
-flux_plot(slopes_ch4_31, f_plotname = "week31_ch4", f_ylim_lower = 1970, f_ylim_upper = 2010, y_text_position = 2000, output = "pdfpages")
+flux_plot(slopes_co2_31, f_plotname = "week31_co2", f_ylim_upper = 600, f_ylim_lower = 350, output = "pdfpages")
+flux_plot(slopes_ch4_31, f_plotname = "week31_ch4", f_ylim_lower = 1970, f_ylim_upper = 2030, y_text_position = 2000, output = "pdfpages")
 
 
 # flux_calc to calculate the fluxes
