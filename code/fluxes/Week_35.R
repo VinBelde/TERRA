@@ -62,9 +62,9 @@ str(conc_df)
 
 # here add start and end cuts and correct time mismatch
 
-conc_co2_35 <- flux_match(conc_df, fieldnotes, conc_col = "CO2", start_col = "datetime_start", measurement_length = 180, time_diff = -140, startcrop = 20)
+conc_co2_35 <- flux_match(conc_df, fieldnotes, conc_col = "CO2", start_col = "datetime_start", measurement_length = 180, time_diff = -140, startcrop = 28)
 
-conc_ch4_35 <- flux_match(conc_df, fieldnotes, conc_col = "CH4", start_col = "datetime_start", measurement_length = 180, time_diff = -140, startcrop = 20)
+conc_ch4_35 <- flux_match(conc_df, fieldnotes, conc_col = "CH4", start_col = "datetime_start", measurement_length = 180, time_diff = -140, startcrop = 30)
 
 conc_co2_35 <- conc_co2_35 |>
   mutate(
@@ -91,17 +91,13 @@ slopes_ch4_35 <- flux_fitting(conc_ch4_35, fit_type = "exp")
 
 slopes_co2_35 <- flux_quality(slopes_co2_35, fit_type = "exp")
 
-slopes_ch4_35 <- flux_quality(slopes_ch4_35, fit_type = "exp", ambient_conc = 2000, 
-                              weird_fluxes_id = c(
-                                109, #almost parabolic CH4 curve, intercept does not fit well
-                                125, #plateau that suddenly drops, fit is very negative
-                                145, #noise at the beginning that disrupts fit
-                                149, #noise at the beginning that disrupts fit
-                                173 #noise at the beginning that disrupts fit 
-                                ))
+slopes_ch4_35 <- flux_quality(slopes_ch4_35, fit_type = "exp", ambient_conc = 2000, force_ok_id = c(
+  38 #fit matches data
+  
+))
 
 flux_plot(slopes_co2_35, f_plotname = "week35_co2", f_ylim_upper = 600, output = "pdfpages")
-flux_plot(slopes_ch4_35, f_plotname = "week35_ch4", f_ylim_lower = 1970, f_ylim_upper = 2050, y_text_position = 2000, output = "pdfpages")
+flux_plot(slopes_ch4_35, f_plotname = "week35_ch4", f_ylim_lower = 1970, f_ylim_upper = 2050, y_text_position = 2020, output = "pdfpages")
 
 
 # flux_calc to calculate the fluxes
