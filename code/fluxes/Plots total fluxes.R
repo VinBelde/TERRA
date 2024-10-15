@@ -30,17 +30,28 @@ fluxes_CH4_all <- read.csv("clean_data/fluxes_CH4.csv")
 fluxes_CO2_all <- read.csv("clean_data/fluxes_CO2.csv")
 
 #Note, output of fluxes is mmol/m2/h for CO2 and µmol/m2/h for CH4
-#Time to make some plots
-#CH4 fluxes per plot per treatment
 
-# Filter the data to include only 'flux' values between 0 and 5000
-filtered_fluxes_CH4_all <- fluxes_CH4_all |>
+# Modify dataframes for plotting
+fluxes_CH4_all <- fluxes_CH4_all |>
   filter(flux > -500 & flux < 3000) |>
-  mutate(flux = flux/3600)
+  mutate(flux = flux/3600) |> #modifiy output to µmol/m2/s
+  mutate(week_number = week(datetime)) |> #add a column with week number
+  filter(TYPE == "C") #in CH4 only care about Cap measurements
 
 
-# Create the plot with filtered data
-CH4_fluxes_plot <- ggplot(filtered_fluxes_CH4_all,
+# modified dataframe for CO2
+fluxes_CO2_all <- fluxes_CO2_all |>
+  filter(flux > -10 & flux < 10) |> #too high fluxes are filted
+  mutate(week_number = week(datetime)) |>
+  filter(TYPE != "C") |> #only care about L and D
+  group_by(SITE, BLOCK, PLOT_ID, week_number) |> #create gep (gross ecosystem production), here it shows CO2 fixation if negative or emission if positive
+    mutate(GEP = ifelse(sum(TYPE == "L") == 1 & sum(TYPE == "D") == 1, 
+                    flux[TYPE == "L"] - flux[TYPE == "D"], 
+                    NA)) |>
+  ungroup()
+
+# Create CH4 flux per Site_ID
+CH4_fluxes_plot <- ggplot(fluxes_CH4_all,
                           aes(
                             x = SITE,
                             y = flux,
@@ -52,11 +63,8 @@ CH4_fluxes_plot <- ggplot(filtered_fluxes_CH4_all,
 
 print(CH4_fluxes_plot)
 
-#Same but CO2
-filtered_fluxes_CO2_all <- fluxes_CO2_all |>
-  filter(flux > -10 & flux < 10)
-
-CO2_fluxes_plot <- ggplot(filtered_fluxes_CO2_all,
+# Create CO2 flux per Site_ID
+CO2_fluxes_plot <- ggplot(fluxes_CO2_all,
                           aes(
                             x = SITE,
                             y = flux,
@@ -70,13 +78,7 @@ print(CO2_fluxes_plot)
 
 
 #Ch4 fluxes over time per treatment
-fluxes_CH4_all_wk <- mutate(
-  fluxes_CH4_all, 
-  week_number = week(datetime)) |>
-  mutate(flux = flux/3600)
-
-
-CH4_fluxes_over_time <- ggplot(fluxes_CH4_all_wk,
+CH4_fluxes_over_time <- ggplot(fluxes_CH4_all,
                                aes(
                                  x = week_number,
                                  y = flux,
@@ -101,12 +103,7 @@ CH4_fluxes_over_time <- ggplot(fluxes_CH4_all_wk,
 plot(CH4_fluxes_over_time)
 
 #CO2 fluxes over time per treatment
-fluxes_CO2_all_wk <- mutate(
-  fluxes_CO2_all, 
-  week_number = week(datetime))
-
-
-CO2_fluxes_over_time <- ggplot(fluxes_CO2_all_wk,
+CO2_fluxes_over_time <- ggplot(fluxes_CO2_all,
                                aes(
                                  x = week_number,
                                  y = flux,
@@ -126,6 +123,39 @@ CO2_fluxes_over_time <- ggplot(fluxes_CO2_all_wk,
     show.legend = FALSE
   ) +
   facet_grid(rows = vars(TYPE), cols = vars(PLOT_ID)) +
-  labs(y = 'CH4 flux (mmol/m2/h)', 
+  labs(y = 'CH4 flux (mmol/m2/s)', 
        x = 'Week number')
 plot(CO2_fluxes_over_time)
+
+#CH4 fluxes per temperature
+CH4_fluxes_Temp <- ggplot(fluxes_CH4_all,
+                          aes(
+                            x = T_out,
+                            y = flux,
+                            colour = SITE
+                          )) +
+  geom_point() +
+  labs(y = 'CH4 flux (µmol/m2/s)') +
+  geom_smooth(method = "lm", se= FALSE) +
+  stat_regline_equation(
+    aes(label = paste(..rr.label.., sep = "~~~")),
+    label.y = c(0.115, 0.125),
+    show.legend = FALSE
+  ) 
+plot(CH4_fluxes_Temp)
+
+#CO2 fluxes per par
+CO2_fluxes_par <- ggplot(fluxes_CO2_all,
+                         aes(
+                           x = PAR_out,
+                           y = GEP,
+                           colour = SITE
+                         )) + 
+  geom_point() +
+  geom_smooth(method = "lm", se= FALSE) +
+  stat_regline_equation(
+    aes(label = paste(..rr.label.., sep = "~~~")),
+    label.y = c(3.5, 2.5),
+    show.legend = FALSE
+  ) 
+plot(CO2_fluxes_par)
