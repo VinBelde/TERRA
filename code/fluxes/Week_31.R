@@ -159,8 +159,8 @@ flux_co2_31_tube <- slopes_co2_31 |>
   ) |>
   flux_calc(
     slope_col = "f_slope_corr",
-    chamber_volume = 1.178, #need to check and add tube volumes
-    plot_area = 0.078,
+    chamber_volume = 0.817, #need to check and add tube volumes
+    plot_area = 0.008171,
     temp_air_col = "T_in_chamber",
     cols_ave = c("PAR_in_chamber", "PAR_out", "T_out"),
     cols_keep = c("f_start", "SITE", "BLOCK", "PLOT_ID", "WARMING", "GRUBBING", "RAIN", "TYPE")
@@ -177,8 +177,8 @@ flux_ch4_31_tube <- slopes_ch4_31 |>
   ) |>
   flux_calc(
     slope_col = "slope_ppm",
-    chamber_volume = 1.178, #need to check and add tube volumes
-    plot_area = 0.078,
+    chamber_volume = 0.817, #need to check and add tube volumes
+    plot_area = 0.008171,
     temp_air_col = "T_in_chamber",
     cols_ave = c("PAR_in_chamber", "PAR_out", "T_out"),
     cols_keep = c("f_start", "SITE", "BLOCK", "PLOT_ID", "WARMING", "GRUBBING", "RAIN", "TYPE")
